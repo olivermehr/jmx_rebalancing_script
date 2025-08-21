@@ -1,0 +1,759 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_escrow",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_voteDelay",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [],
+        "name": "AlreadyInitialized",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "AssetAlreadyAdded",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "AssetNotAdded",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "CannotVoteSoOften",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InvalidInitialization",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "InvalidWeightBP",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "LockExpiresSoon",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NewOwnerIsZeroAddress",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NoHandoverRequest",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotInitializing",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Unauthorized",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "UnauthorizedCallContext",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "UpgradeFailed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "UsedTooMuchPower",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "AssetAdded",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint64",
+                "name": "version",
+                "type": "uint64"
+            }
+        ],
+        "name": "Initialized",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "pendingOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipHandoverCanceled",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "pendingOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipHandoverRequested",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "oldOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "implementation",
+                "type": "address"
+            }
+        ],
+        "name": "Upgraded",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "user",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "weight",
+                "type": "uint256"
+            }
+        ],
+        "name": "Vote",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "addAsset",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "assetIds",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "addAssets",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "assetUpdatedAt",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "assets",
+        "outputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "",
+                "type": "uint256[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "cancelOwnershipHandover",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "name": "changesSum",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "slope",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "checkpoint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "checkpointAsset",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "pendingOwner",
+                "type": "address"
+            }
+        ],
+        "name": "completeOwnershipHandover",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "initialize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "lastTime",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "result",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "pendingOwner",
+                "type": "address"
+            }
+        ],
+        "name": "ownershipHandoverExpiresAt",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "result",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "name": "pointTotal",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "totalWeight",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "name": "pointsOfAt",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "slope",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "bias",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "name": "pointsSum",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "slope",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "bias",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "proxiableUUID",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "relativeWeight",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "name": "relativeWeightAt",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "renounceOwnership",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "requestOwnershipHandover",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "name": "slopeChangesOfAt",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "slope",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "timeSum",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalWeight",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "updatedRelativeWeight",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "name": "updatedRelativeWeightAt",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newImplementation",
+                "type": "address"
+            },
+            {
+                "internalType": "bytes",
+                "name": "data",
+                "type": "bytes"
+            }
+        ],
+        "name": "upgradeToAndCall",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "user",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "userAssetSlope",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "slope",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "power",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "end",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "user",
+                "type": "address"
+            }
+        ],
+        "name": "userPower",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "power",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "user",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "userVoteAt",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "time",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint16",
+                "name": "userWeight",
+                "type": "uint16"
+            }
+        ],
+        "name": "vote",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "assetId",
+                "type": "uint256"
+            }
+        ],
+        "name": "weight",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "weightsSum",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]

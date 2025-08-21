@@ -1,0 +1,147 @@
+mod fetch_data;
+mod variables;
+mod write_data;
+use std::{env, time};
+
+use crate::{
+    IJooceVoting::IJooceVotingInstance,
+    fetch_data::{decode_asset_ids, get_relative_weight, get_ticker},
+    variables::{CHAIN_ID_TO_URL, INACTIVE_ASSETS, JOOCE_INT_WEIGHT, VOTING_CONTRACT_ADDRESS},
+    write_data::{print_hashmap, write_to_google_sheet},
+};
+use alloy::{
+    primitives::{Address, U256, address},
+    providers::{DynProvider, Provider, ProviderBuilder},
+    signers::local::PrivateKeySigner,
+    sol,
+};
+use dotenv::dotenv;
+
+use op_alloy_network::Optimism;
+
+#[derive(Debug, Clone)]
+pub struct AssetData {
+    id: U256,
+    token_addr: Address,
+    symbol: Option<String>,
+    chain_id: U256,
+    relative_weight: Option<U256>,
+    actual_weight: Option<f64>,
+    converted_weight: Option<u16>,
+}
+
+sol!(
+    #[allow(missing_docs)]
+    #[sol(rpc)]
+    IJooceVoting,
+    "abi/JooceVoting.json"
+);
+
+sol!(
+    #[allow(missing_docs)]
+    #[sol(rpc)]
+    IErc20,
+    "abi/Erc20.json"
+);
+
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
+    let time = time::Instant::now();
+    let args: Vec<String> = env::args().collect();
+    dotenv().ok();
+    let pk: PrivateKeySigner = std::env::var("PRIVATE_KEY")
+        .expect("Private key missing")
+        .parse()?;
+    let key = op_alloy_network::EthereumWallet::new(pk);
+    let provider = ProviderBuilder::new_with_network::<Optimism>()
+        .wallet(key)
+        .connect_http(CHAIN_ID_TO_URL.get(&U256::from(8453)).unwrap().parse()?)
+        .erased();
+    let contract: IJooceVotingInstance<DynProvider<Optimism>, Optimism> =
+        IJooceVoting::new(VOTING_CONTRACT_ADDRESS.parse()?, provider.clone());
+    let asset_ids: Vec<U256> = contract.assets().call().await?;
+    if let Some(val) = args.get(1) {
+        if val.to_lowercase() == "update" {
+            update_relative_weight(&contract, &asset_ids).await;
+        }
+    }
+    let mut decoded_data = decode_asset_ids(&asset_ids);
+    let jooce = AssetData {
+        id: U256::default(),
+        symbol: Some("JOOCE".to_owned()),
+        token_addr: address!("0x100CE3E3391C00B6A52911313A4Ea8D23c8a38D8"),
+        chain_id: U256::from(8453),
+        actual_weight: Some(0.02),
+        converted_weight: Some(JOOCE_INT_WEIGHT),
+        relative_weight: None,
+    };
+
+    get_ticker(&mut decoded_data).await;
+    get_relative_weight(provider, &contract, &mut decoded_data).await;
+    calculate_actual_weights(&mut decoded_data);
+    decoded_data.push(jooce);
+    decoded_data.sort_by(|a, b| {
+        b.converted_weight
+            .unwrap()
+            .cmp(&a.converted_weight.unwrap())
+    });
+
+    print_hashmap(&decoded_data);
+    write_to_google_sheet(&decoded_data).await;
+
+    println!("{:?}", time.elapsed());
+    Ok(())
+}
+
+async fn update_relative_weight(
+    contract: &IJooceVotingInstance<DynProvider<Optimism>, Optimism>,
+    ids: &[U256],
+) {
+    for id in ids.iter() {
+        let tx = contract.checkpointAsset(*id).send().await;
+        match tx {
+            Ok(val) => {
+                let receipt = val.get_receipt().await;
+                println!("{:?}", receipt.unwrap())
+            }
+            Err(val) => {
+                println!("Error with tx - {}", val);
+            }
+        }
+    }
+}
+
+fn calculate_actual_weights(asset_data: &mut Vec<AssetData>) {
+    asset_data.retain(|asset| {
+        !INACTIVE_ASSETS.contains(&asset.token_addr)
+            && asset.relative_weight.unwrap() >= U256::from((0.005 * 1e18) as u64)
+    });
+
+    let weight_sum = asset_data
+        .iter()
+        .fold(U256::from(0), |acc, x| acc + x.relative_weight.unwrap())
+        .to::<u64>() as f64;
+
+    asset_data.iter_mut().for_each(|asset| {
+        let relative_weight = asset.relative_weight.unwrap().to::<u64>() as f64;
+        let actual_weight = (relative_weight / weight_sum) * 0.98;
+        let converted_weight = (u16::MAX as f64 * actual_weight) as u16;
+        asset.actual_weight.replace(actual_weight);
+        asset.converted_weight.replace(converted_weight);
+    });
+    let adjusted_sum = asset_data
+        .iter()
+        .fold(0, |acc, x| acc + x.converted_weight.unwrap());
+
+    let mut remainder = u16::MAX - 1311 - adjusted_sum;
+
+    while remainder != 0 {
+        for i in asset_data.iter_mut() {
+            i.converted_weight.replace(i.converted_weight.unwrap() + 1);
+            remainder -= 1;
+            if remainder == 0 {
+                break;
+            }
+        }
+    }
+}
