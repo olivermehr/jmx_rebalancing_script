@@ -86,7 +86,7 @@ async fn main() -> Result<(), anyhow::Error> {
     }
     calculate_actual_weights(&mut decoded_data);
     decoded_data.push(jooce);
-    decoded_data.sort_by(|a, b| {
+    decoded_data.sort_unstable_by(|a, b| {
         b.converted_weight
             .unwrap()
             .cmp(&a.converted_weight.unwrap())

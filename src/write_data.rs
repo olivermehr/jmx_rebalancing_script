@@ -42,13 +42,14 @@ pub async fn write_to_google_sheet(asset_data: &[AssetData]) {
     let sheet_index = get_last_sheet_properties(&hub).await.index.unwrap();
     let new_sheet_id = sheet_index + 2;
 
-    let mut sheet_data = vec![vec![
+    let mut sheet_data = Vec::with_capacity(asset_data.len() + 2);
+    sheet_data.push(vec![
         serde_json::to_value("Asset").unwrap(),
         serde_json::to_value("Percentage").unwrap(),
         serde_json::to_value("Uint16").unwrap(),
         serde_json::to_value("Chain").unwrap(),
         serde_json::to_value("").unwrap(),
-    ]];
+    ]);
 
     asset_data.iter().for_each(|asset| {
         let row = vec![
