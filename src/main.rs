@@ -76,11 +76,17 @@ async fn main() -> Result<(), anyhow::Error> {
         relative_weight: None,
     };
 
-    get_ticker(&mut decoded_data).await;
-    get_relative_weight(provider, &contract, &mut decoded_data).await;
+    let (weights, symbols) = tokio::join!(
+        get_relative_weight(provider, &contract, &decoded_data),
+        get_ticker(&decoded_data)
+    );
+    for (i, asset) in decoded_data.iter_mut().enumerate() {
+        asset.relative_weight = Some(weights[i]);
+        asset.symbol = Some(symbols[i].clone());
+    }
     calculate_actual_weights(&mut decoded_data);
     decoded_data.push(jooce);
-    decoded_data.sort_by(|a, b| {
+    decoded_data.sort_unstable_by(|a, b| {
         b.converted_weight
             .unwrap()
             .cmp(&a.converted_weight.unwrap())
@@ -133,15 +139,22 @@ fn calculate_actual_weights(asset_data: &mut Vec<AssetData>) {
         .iter()
         .fold(0, |acc, x| acc + x.converted_weight.unwrap());
 
-    let mut remainder = u16::MAX - 1311 - adjusted_sum;
+    let remainder = u16::MAX - 1311 - adjusted_sum;
+    let base = remainder / asset_data.len() as u16;
+    let extra = remainder % asset_data.len() as u16;
 
-    while remainder != 0 {
-        for i in asset_data.iter_mut() {
-            i.converted_weight.replace(i.converted_weight.unwrap() + 1);
-            remainder -= 1;
-            if remainder == 0 {
-                break;
-            }
-        }
-    }
+    asset_data.iter_mut().for_each(|asset| {
+        asset
+            .converted_weight
+            .replace(asset.converted_weight.unwrap() + base);
+    });
+
+    asset_data
+        .iter_mut()
+        .take(extra as usize)
+        .for_each(|asset| {
+            asset
+                .converted_weight
+                .replace(asset.converted_weight.unwrap() + 1);
+        });
 }
