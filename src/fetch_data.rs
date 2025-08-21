@@ -39,6 +39,7 @@ pub type ProviderMap = HashMap<
     U256,
     Option<(
         Vec<usize>,
+        DynProvider<Ethereum>,
         MulticallBuilder<Dynamic<IErc20::symbolCall>, DynProvider, Ethereum>,
     )>,
 >;
@@ -54,20 +55,11 @@ pub async fn get_ticker(asset_data: &mut [AssetData]) {
             provider_map
                 .entry(asset.chain_id)
                 .and_modify(|e| {
-                    let provider = ProviderBuilder::new()
-                        .connect_http(
-                            CHAIN_ID_TO_URL
-                                .get(&asset.chain_id)
-                                .unwrap()
-                                .parse()
-                                .unwrap(),
-                        )
-                        .erased();
-                    let contract = IErc20::new(asset.token_addr, provider);
-                    let mut option = e.take().unwrap();
-                    option.0.push(i);
-
-                    *e = Some((option.0, option.1.add_dynamic(contract.symbol())))
+                    let (mut indices, provider, multicall) = e.take().unwrap();
+                    indices.push(i);
+                    let contract = IErc20::new(asset.token_addr, provider.clone());
+                    let multicall = multicall.add_dynamic(contract.symbol());
+                    *e = Some((indices, provider, multicall));
                 })
                 .or_insert({
                     let provider = ProviderBuilder::new()
@@ -83,7 +75,11 @@ pub async fn get_ticker(asset_data: &mut [AssetData]) {
                     let contract = IErc20::new(asset.token_addr, provider.clone());
                     let mut index_vec = Vec::with_capacity(asset_data.len());
                     index_vec.push(i);
-                    Some((index_vec, multicall_provider.add_dynamic(contract.symbol())))
+                    Some((
+                        index_vec,
+                        provider,
+                        multicall_provider.add_dynamic(contract.symbol()),
+                    ))
                 });
         } else {
             let mint_address = ADDR_TO_SOL_MINT_ADDR.get(&asset.token_addr).unwrap();
@@ -95,7 +91,7 @@ pub async fn get_ticker(asset_data: &mut [AssetData]) {
     }
 
     for (_k, v) in provider_map.into_iter() {
-        let (indices, multicall) = v.unwrap();
+        let (indices, _provider, multicall) = v.unwrap();
         let symbols = multicall.aggregate().await.unwrap();
         for i in 0..indices.len() {
             asset_data[indices[i]]
