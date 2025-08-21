@@ -76,8 +76,14 @@ async fn main() -> Result<(), anyhow::Error> {
         relative_weight: None,
     };
 
-    get_ticker(&mut decoded_data).await;
-    get_relative_weight(provider, &contract, &mut decoded_data).await;
+    let (weights, symbols) = tokio::join!(
+        get_relative_weight(provider, &contract, &decoded_data),
+        get_ticker(&decoded_data)
+    );
+    for (i, asset) in decoded_data.iter_mut().enumerate() {
+        asset.relative_weight = Some(weights[i]);
+        asset.symbol = Some(symbols[i].clone());
+    }
     calculate_actual_weights(&mut decoded_data);
     decoded_data.push(jooce);
     decoded_data.sort_by(|a, b| {
