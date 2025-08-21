@@ -15,8 +15,8 @@ use std::{collections::HashMap, str::FromStr};
 pub async fn get_relative_weight(
     provider: DynProvider<Optimism>,
     contract: &IJooceVotingInstance<DynProvider<Optimism>, Optimism>,
-    asset_data: &mut [AssetData],
-) {
+    asset_data: &[AssetData],
+) -> Vec<U256> {
     let mut multicall: MulticallBuilder<
         Dynamic<IJooceVoting::relativeWeightCall>,
         &DynProvider<Optimism>,
@@ -30,9 +30,7 @@ pub async fn get_relative_weight(
 
     assert_eq!(&result.len(), &asset_data.len(), "Unequal arrays");
 
-    for i in 0..asset_data.len() {
-        asset_data[i].relative_weight = Some(result[i])
-    }
+    result
 }
 
 pub type ProviderMap = HashMap<
@@ -43,13 +41,13 @@ pub type ProviderMap = HashMap<
     )>,
 >;
 
-pub async fn get_ticker(asset_data: &mut [AssetData]) {
+pub async fn get_ticker(asset_data: &[AssetData]) -> Vec<String> {
     let mut provider_map: ProviderMap = HashMap::new();
     let mut solana_tokens: Vec<Pubkey> = Vec::new();
     let mut solana_indices: Vec<usize> = Vec::new();
+    let mut symbols: Vec<String> = vec![String::new(); asset_data.len()];
 
-    for i in 0..asset_data.len() {
-        let asset = &asset_data[i];
+    for (i, asset) in asset_data.iter().enumerate() {
         if asset.chain_id != U256::from(1151111081099710_u64) {
             provider_map
                 .entry(asset.chain_id)
@@ -96,11 +94,9 @@ pub async fn get_ticker(asset_data: &mut [AssetData]) {
 
     for (_k, v) in provider_map.into_iter() {
         let (indices, multicall) = v.unwrap();
-        let symbols = multicall.aggregate().await.unwrap();
-        for i in 0..indices.len() {
-            asset_data[indices[i]]
-                .symbol
-                .replace(symbols[i].to_uppercase());
+        let result = multicall.aggregate().await.unwrap();
+        for (idx, sym) in indices.iter().zip(result) {
+            symbols[*idx] = sym.to_uppercase();
         }
     }
     let sol_provider = rpc_client::RpcClient::new(
@@ -109,24 +105,23 @@ pub async fn get_ticker(asset_data: &mut [AssetData]) {
             .unwrap(),
     );
     let sol_metadata_account = sol_provider.get_multiple_accounts(&solana_tokens).unwrap();
-    for i in 0..sol_metadata_account.len() {
-        if let Some(val) = &sol_metadata_account[i] {
+    for (account, idx) in sol_metadata_account.iter().zip(solana_indices) {
+        if let Some(val) = account {
             let metadata = mpl_token_metadata::accounts::Metadata::safe_deserialize(&val.data);
             match metadata {
                 Ok(val) => {
-                    asset_data[solana_indices[i]]
-                        .symbol
-                        .replace(val.symbol.trim_end_matches('\0').to_uppercase());
+                    symbols[idx] = val.symbol.trim_end_matches('\0').to_uppercase();
                 }
                 Err(_) => {
                     println!(
                         "Metadata decoding failed for {:?}",
-                        asset_data[solana_indices[i]].token_addr
+                        asset_data[idx].token_addr
                     )
                 }
             }
         }
     }
+    symbols
 }
 
 pub fn decode_asset_ids(asset_ids: &[U256]) -> Vec<AssetData> {
