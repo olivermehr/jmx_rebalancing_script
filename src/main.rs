@@ -139,7 +139,7 @@ fn calculate_actual_weights(asset_data: &mut Vec<AssetData>) {
         .iter()
         .fold(0, |acc, x| acc + x.converted_weight.unwrap());
 
-    let remainder = u16::MAX - 1311 - adjusted_sum;
+    let remainder = u16::MAX - JOOCE_INT_WEIGHT - adjusted_sum;
     let base = remainder / asset_data.len() as u16;
     let extra = remainder % asset_data.len() as u16;
 
