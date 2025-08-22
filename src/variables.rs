@@ -6,13 +6,11 @@ use std::sync::LazyLock;
 pub const VOTING_CONTRACT_ADDRESS: &str = "0xdD5CB392A549644295862f96f25484a56FB2e6a8";
 pub const INACTIVE_ASSETS: [Address; 1] = [address!("0x576e2bed8f7b46d34016198911cdf9886f78bea7")];
 pub const JOOCE_INT_WEIGHT: u16 = 1311;
+pub const SOLANA_CHAIN_ID: U256 = U256::from_limbs([1151111081099710_u64, 0, 0, 0]);
 
 pub static CHAIN_ID_TO_URL: LazyLock<HashMap<U256, String>> = LazyLock::new(|| {
     let mut map = HashMap::new();
-    map.insert(
-        U256::from(1151111081099710_u64),
-        env::var("SOLANA_RPC").unwrap(),
-    );
+    map.insert(SOLANA_CHAIN_ID, env::var("SOLANA_RPC").unwrap());
     map.insert(U256::from(8453), env::var("BASE_RPC").unwrap());
     map.insert(U256::from(1), env::var("ETHEREUM_RPC").unwrap());
     map.insert(U256::from(56), env::var("BINANCE_RPC").unwrap());
@@ -25,7 +23,7 @@ pub static CHAIN_ID_TO_URL: LazyLock<HashMap<U256, String>> = LazyLock::new(|| {
 
 pub static CHAIN_ID_TO_STRING: LazyLock<HashMap<U256, &str>> = LazyLock::new(|| {
     let mut map = HashMap::new();
-    map.insert(U256::from(1151111081099710_u64), "SOLANA");
+    map.insert(SOLANA_CHAIN_ID, "SOLANA");
     map.insert(U256::from(8453), "BASE");
     map.insert(U256::from(1), "ETHEREUM");
     map.insert(U256::from(56), "BSC");
