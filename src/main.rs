@@ -117,10 +117,12 @@ async fn update_relative_weight(
     }
 }
 
+const MIN_RELATIVE_WEIGHT: U256 = U256::from_limbs([5_000_000_000_000_000_u64, 0, 0, 0]);
+
 fn calculate_actual_weights(asset_data: &mut Vec<AssetData>) {
     asset_data.retain(|asset| {
         !INACTIVE_ASSETS.contains(&asset.token_addr)
-            && asset.relative_weight.unwrap() >= U256::from((0.005 * 1e18) as u64)
+            && asset.relative_weight.unwrap() >= MIN_RELATIVE_WEIGHT
     });
 
     let weight_sum = asset_data
