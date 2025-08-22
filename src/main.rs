@@ -6,7 +6,10 @@ use std::{env, time};
 use crate::{
     IJooceVoting::IJooceVotingInstance,
     fetch_data::{decode_asset_ids, get_relative_weight, get_ticker},
-    variables::{CHAIN_ID_TO_URL, INACTIVE_ASSETS, JOOCE_INT_WEIGHT, VOTING_CONTRACT_ADDRESS},
+    variables::{
+        CHAIN_ID_TO_URL, INACTIVE_ASSETS, JOOCE_INT_WEIGHT, MIN_RELATIVE_WEIGHT,
+        VOTING_CONTRACT_ADDRESS,
+    },
     write_data::write_to_google_sheet,
 };
 use alloy::{
@@ -115,8 +118,6 @@ async fn update_relative_weight(
         }
     }
 }
-
-const MIN_RELATIVE_WEIGHT: U256 = U256::from_limbs([5_000_000_000_000_000_u64, 0, 0, 0]);
 
 fn calculate_actual_weights(asset_data: &mut Vec<AssetData>) {
     asset_data.retain(|asset| {

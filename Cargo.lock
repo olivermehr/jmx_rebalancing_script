@@ -3036,6 +3036,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "dotenv",
+ "futures",
  "google-sheets4",
  "mpl-token-metadata",
  "op-alloy-network",

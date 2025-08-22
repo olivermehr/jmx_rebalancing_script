@@ -6,6 +6,7 @@ pub const VOTING_CONTRACT_ADDRESS: &str = "0xdD5CB392A549644295862f96f25484a56FB
 pub const INACTIVE_ASSETS: [Address; 1] = [address!("0x576e2bed8f7b46d34016198911cdf9886f78bea7")];
 pub const JOOCE_INT_WEIGHT: u16 = 1311;
 pub const SOLANA_CHAIN_ID: U256 = U256::from_limbs([1151111081099710_u64, 0, 0, 0]);
+pub const MIN_RELATIVE_WEIGHT: U256 = U256::from_limbs([5_000_000_000_000_000_u64, 0, 0, 0]);
 
 pub static CHAIN_ID_TO_URL: LazyLock<HashMap<U256, String>> = LazyLock::new(|| {
     let mut map = HashMap::new();

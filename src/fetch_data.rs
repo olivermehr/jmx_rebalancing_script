@@ -87,13 +87,23 @@ pub async fn get_ticker(asset_data: &[AssetData]) -> Vec<String> {
         }
     }
 
+    let mut futures_vec = Vec::new();
+    let mut index_vec = Vec::new();
     for (_k, v) in provider_map.into_iter() {
         let (indices, _provider, multicall) = v.unwrap();
-        let result = multicall.aggregate().await.unwrap();
-        for (idx, sym) in indices.iter().zip(result) {
-            symbols[*idx] = sym.to_uppercase();
-        }
+        let fut = async move { multicall.aggregate().await };
+        futures_vec.push(fut);
+        index_vec.push(indices);
     }
+    let results = futures::future::try_join_all(futures_vec).await.unwrap();
+    results
+        .into_iter()
+        .flatten()
+        .zip(index_vec.into_iter().flatten())
+        .for_each(|(symbol, index)| {
+            symbols[index] = symbol.to_uppercase();
+        });
+
     let sol_provider = rpc_client::RpcClient::new(CHAIN_ID_TO_URL.get(&SOLANA_CHAIN_ID).unwrap());
     let sol_metadata_account = sol_provider.get_multiple_accounts(&solana_tokens).unwrap();
     for (account, idx) in sol_metadata_account.iter().zip(solana_indices) {
