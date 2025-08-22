@@ -10,7 +10,7 @@ use alloy::{
 use op_alloy_network::{Ethereum, Optimism};
 use solana_client::rpc_client;
 use solana_sdk::pubkey::Pubkey;
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 pub async fn get_relative_weight(
     provider: DynProvider<Optimism>,
@@ -80,9 +80,8 @@ pub async fn get_ticker(asset_data: &[AssetData]) -> Vec<String> {
                     ))
                 });
         } else {
-            let mint_address = ADDR_TO_SOL_MINT_ADDR.get(&asset.token_addr).unwrap();
-            let pub_key = solana_sdk::pubkey::Pubkey::from_str(mint_address).unwrap();
-            let pda = mpl_token_metadata::accounts::Metadata::find_pda(&pub_key).0;
+            let mint_pubkey = ADDR_TO_SOL_MINT_ADDR.get(&asset.token_addr).unwrap();
+            let pda = mpl_token_metadata::accounts::Metadata::find_pda(mint_pubkey).0;
             solana_tokens.push(pda);
             solana_indices.push(i);
         }
