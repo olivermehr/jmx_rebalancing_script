@@ -1,7 +1,7 @@
 use crate::{
     AssetData, IErc20,
     IJooceVoting::{self, IJooceVotingInstance},
-    variables::{ADDR_TO_SOL_MINT_ADDR, CHAIN_ID_TO_URL},
+    variables::{ADDR_TO_SOL_MINT_ADDR, CHAIN_ID_TO_URL, SOLANA_CHAIN_ID},
 };
 use alloy::{
     primitives::{Address, U256, address},
@@ -49,7 +49,7 @@ pub async fn get_ticker(asset_data: &[AssetData]) -> Vec<String> {
     let mut symbols: Vec<String> = vec![String::new(); asset_data.len()];
 
     for (i, asset) in asset_data.iter().enumerate() {
-        if asset.chain_id != U256::from(1151111081099710_u64) {
+        if asset.chain_id != SOLANA_CHAIN_ID {
             provider_map
                 .entry(asset.chain_id)
                 .and_modify(|e| {
@@ -89,19 +89,13 @@ pub async fn get_ticker(asset_data: &[AssetData]) -> Vec<String> {
     }
 
     for (_k, v) in provider_map.into_iter() {
-
         let (indices, _provider, multicall) = v.unwrap();
         let result = multicall.aggregate().await.unwrap();
         for (idx, sym) in indices.iter().zip(result) {
             symbols[*idx] = sym.to_uppercase();
-
         }
     }
-    let sol_provider = rpc_client::RpcClient::new(
-        CHAIN_ID_TO_URL
-            .get(&U256::from(1151111081099710_u64))
-            .unwrap(),
-    );
+    let sol_provider = rpc_client::RpcClient::new(CHAIN_ID_TO_URL.get(&SOLANA_CHAIN_ID).unwrap());
     let sol_metadata_account = sol_provider.get_multiple_accounts(&solana_tokens).unwrap();
     for (account, idx) in sol_metadata_account.iter().zip(solana_indices) {
         if let Some(val) = account {
@@ -128,7 +122,7 @@ pub fn decode_asset_ids(asset_ids: &[U256]) -> Vec<AssetData> {
         let byte_array = x.to_be_bytes::<32>();
         let token_addr = Address::from_slice(&byte_array[12..]);
         let chain_id = if token_addr == address!("0xa697e272a73744b343528c3bc4702f2565b2f422") {
-            U256::from(1151111081099710_u64)
+            SOLANA_CHAIN_ID
         } else {
             U256::from_be_slice(&byte_array[0..12])
         };
