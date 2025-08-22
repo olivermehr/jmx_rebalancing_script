@@ -83,7 +83,8 @@ pub async fn write_to_google_sheet(asset_data: &[AssetData]) {
         ]]),
     };
     add_sheet_and_set_formatting(&hub, new_sheet_id, data_length).await;
-    let req = hub
+
+    let _ = hub
         .spreadsheets()
         .values_batch_update(
             BatchUpdateValuesRequest {
@@ -95,10 +96,9 @@ pub async fn write_to_google_sheet(asset_data: &[AssetData]) {
         )
         .doit()
         .await;
-    println!("{:?}", req);
 }
 
-pub fn print_hashmap(asset_data: &[AssetData]) {
+pub fn _print_hashmap(asset_data: &[AssetData]) {
     let mut map: HashMap<&Address, u16> = HashMap::new();
     map.insert(&Address::ZERO, 0);
     for i in asset_data {
@@ -127,7 +127,7 @@ async fn batch_update_request(
     hub: &Sheets<HttpsConnector<HttpConnector>>,
     updates: Option<Vec<Request>>,
 ) {
-    let req = hub
+    let _ = hub
         .spreadsheets()
         .batch_update(
             BatchUpdateSpreadsheetRequest {
@@ -138,8 +138,6 @@ async fn batch_update_request(
         )
         .doit()
         .await;
-
-    println!("{:?}", req);
 }
 
 async fn add_sheet_and_set_formatting(

@@ -7,7 +7,7 @@ use crate::{
     IJooceVoting::IJooceVotingInstance,
     fetch_data::{decode_asset_ids, get_relative_weight, get_ticker},
     variables::{CHAIN_ID_TO_URL, INACTIVE_ASSETS, JOOCE_INT_WEIGHT, VOTING_CONTRACT_ADDRESS},
-    write_data::{print_hashmap, write_to_google_sheet},
+    write_data::write_to_google_sheet,
 };
 use alloy::{
     primitives::{Address, U256, address},
@@ -91,8 +91,7 @@ async fn main() -> Result<(), anyhow::Error> {
             .unwrap()
             .cmp(&a.converted_weight.unwrap())
     });
-
-    print_hashmap(&decoded_data);
+    //print_hashmap(&decoded_data);
     write_to_google_sheet(&decoded_data).await;
 
     println!("{:?}", time.elapsed());
