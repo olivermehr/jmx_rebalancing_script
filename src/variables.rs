@@ -85,8 +85,58 @@ pub static ADDR_TO_SOL_MINT_ADDR: LazyLock<HashMap<Address, Pubkey>> = LazyLock:
         Pubkey::from_str("A8C3xuqscfmyLrte3VmTqrAq8kgMASius9AFNANwpump").unwrap(),
     );
     map.insert(
-        address!("0xa697e272a73744b343528c3bc4702f2565b2f422"),
+        address!("0x9BcbE99c5de789156Aa30eE47C0447BEac2a3B4c"),
         Pubkey::from_str("DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263").unwrap(),
+    );
+
+    map
+});
+
+pub static TOKEN_TO_OFT: LazyLock<HashMap<Address, Address>> = LazyLock::new(|| {
+    let mut map = HashMap::new();
+    map.insert(
+        address!("0x420fca0121dc28039145009570975747295f2329"),
+        address!("0x1fb8432d5e243986DF8AB85aEa1DfF5030ac54b6"),
+    );
+    map.insert(
+        address!("0xba2ae424d960c26247dd6c32edc70b295c744c43"),
+        address!("0x2943191025ae254A7546BdDC57e6173826e4dBc7"),
+    );
+    map.insert(
+        address!("0xc748673057861a797275cd8a068abb95a902e8de"),
+        address!("0xc847511c793202C4ef86aE006d81bACeeEd8Ff5C"),
+    );
+    map.insert(
+        address!("0xfb5b838b6cfeedc2873ab27866079ac55363d37e"),
+        address!("0x2f225080c88934B211eF41F1247A88F6a1c30Db6"),
+    );
+    map.insert(
+        address!("0x6894cde390a3f51155ea41ed24a33a4827d3063d"),
+        address!("0x7510F51A66cE78c9932056B17C26bbbE9f56336D"),
+    );
+    map.insert(
+        address!("0x6982508145454ce325ddbe47a25d4ec3d2311933"),
+        address!("0xfDB933367b116f31b24116e761234E631092b7F2"),
+    );
+    map.insert(
+        address!("0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce"),
+        address!("0x638BDc76db8aACc2cae4A4302334007Ca300d4C9"),
+    );
+    map.insert(
+        address!("0x812ba41e071c7b7fa4ebcfb62df5f45f6fa853ee"),
+        address!("0x1666fe591E2F378091c7A9866d80DA445Fd3A1F3"),
+    );
+    map.insert(
+        address!("0xb131f4a55907b10d1f0a50d8ab8fa09ec342cd74"),
+        address!("0x7F3B6f46503a7fe22CbEd587d94B5566c99A3f07"),
+    );
+    map.insert(
+        address!("0x761d38e5ddf6ccf6cf7c55759d5210750b5d60f3"),
+        address!("0xC803A27157B69F3EEaFC3ff6AF77b40E9D79274c"),
+    );
+    map.insert(
+        address!("0x5026f006b85729a8b14553fae6af249ad16c9aab"),
+        address!("0xAEa066b947D2201f60a62537d030aD3dC5cd324D"),
     );
 
     map

@@ -98,11 +98,11 @@ pub async fn write_to_google_sheet(asset_data: &[AssetData]) {
         .await;
 }
 
-pub fn _print_hashmap(asset_data: &[AssetData]) {
+pub fn print_hashmap(asset_data: &[AssetData]) {
     let mut map: HashMap<&Address, u16> = HashMap::new();
     map.insert(&Address::ZERO, 0);
     for i in asset_data {
-        map.insert(&i.token_addr, i.converted_weight.unwrap());
+        map.insert(&i.oft_address, i.converted_weight.unwrap());
     }
     println!("{:?}", map)
 }

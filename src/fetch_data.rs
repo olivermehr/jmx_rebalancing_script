@@ -1,7 +1,7 @@
 use crate::{
     AssetData, IErc20,
     IJooceVoting::{self, IJooceVotingInstance},
-    variables::{ADDR_TO_SOL_MINT_ADDR, CHAIN_ID_TO_URL, SOLANA_CHAIN_ID},
+    variables::{ADDR_TO_SOL_MINT_ADDR, CHAIN_ID_TO_URL, SOLANA_CHAIN_ID, TOKEN_TO_OFT},
 };
 use alloy::{
     primitives::{Address, U256, address},
@@ -129,8 +129,9 @@ pub fn decode_asset_ids(asset_ids: &[U256]) -> Vec<AssetData> {
     let mut out = Vec::with_capacity(asset_ids.len());
     for x in asset_ids {
         let byte_array = x.to_be_bytes::<32>();
-        let token_addr = Address::from_slice(&byte_array[12..]);
+        let mut token_addr = Address::from_slice(&byte_array[12..]);
         let chain_id = if token_addr == address!("0xa697e272a73744b343528c3bc4702f2565b2f422") {
+            token_addr = address!("0x9BcbE99c5de789156Aa30eE47C0447BEac2a3B4c");
             SOLANA_CHAIN_ID
         } else {
             U256::from_be_slice(&byte_array[0..12])
@@ -139,6 +140,7 @@ pub fn decode_asset_ids(asset_ids: &[U256]) -> Vec<AssetData> {
         out.push(AssetData {
             id: *x,
             token_addr,
+            oft_address: *TOKEN_TO_OFT.get(&token_addr).unwrap_or(&token_addr),
             chain_id,
             relative_weight: None,
             actual_weight: None,

@@ -4,13 +4,10 @@ mod write_data;
 use std::{env, time};
 
 use crate::{
-    IJooceVoting::IJooceVotingInstance,
-    fetch_data::{decode_asset_ids, get_relative_weight, get_ticker},
-    variables::{
+    fetch_data::{decode_asset_ids, get_relative_weight, get_ticker}, variables::{
         CHAIN_ID_TO_URL, INACTIVE_ASSETS, JOOCE_INT_WEIGHT, MIN_RELATIVE_WEIGHT,
         VOTING_CONTRACT_ADDRESS,
-    },
-    write_data::write_to_google_sheet,
+    }, write_data::{print_hashmap, write_to_google_sheet}, IJooceVoting::IJooceVotingInstance
 };
 use alloy::{
     primitives::{Address, U256, address},
@@ -26,6 +23,7 @@ use op_alloy_network::Optimism;
 pub struct AssetData {
     id: U256,
     token_addr: Address,
+    oft_address: Address,
     symbol: Option<String>,
     chain_id: U256,
     relative_weight: Option<U256>,
@@ -63,16 +61,17 @@ async fn main() -> Result<(), anyhow::Error> {
     let contract: IJooceVotingInstance<DynProvider<Optimism>, Optimism> =
         IJooceVoting::new(VOTING_CONTRACT_ADDRESS.parse()?, provider.clone());
     let asset_ids: Vec<U256> = contract.assets().call().await?;
-    if let Some(val) = args.get(1) {
-        if val.to_lowercase() == "update" {
-            update_relative_weight(&contract, &asset_ids).await;
-        }
+    if let Some(val) = args.get(1)
+        && val.to_lowercase() == "update"
+    {
+        update_relative_weight(&contract, &asset_ids).await;
     }
     let mut decoded_data = decode_asset_ids(&asset_ids);
     let jooce = AssetData {
         id: U256::default(),
         symbol: Some("JOOCE".to_owned()),
         token_addr: address!("0x100CE3E3391C00B6A52911313A4Ea8D23c8a38D8"),
+        oft_address: address!("0x100CE3E3391C00B6A52911313A4Ea8D23c8a38D8"),
         chain_id: U256::from(8453),
         actual_weight: Some(0.02),
         converted_weight: Some(JOOCE_INT_WEIGHT),
@@ -94,9 +93,9 @@ async fn main() -> Result<(), anyhow::Error> {
             .unwrap()
             .cmp(&a.converted_weight.unwrap())
     });
-    //print_hashmap(&decoded_data);
-    write_to_google_sheet(&decoded_data).await;
 
+    write_to_google_sheet(&decoded_data).await;
+    print_hashmap(&decoded_data);
     println!("{:?}", time.elapsed());
     Ok(())
 }
