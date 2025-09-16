@@ -39,8 +39,9 @@ pub async fn write_to_google_sheet(asset_data: &[AssetData]) {
         auth,
     );
     // Get sheet index before we add new sheet
-    let sheet_index = get_last_sheet_properties(&hub).await.index.unwrap();
-    let new_sheet_id = sheet_index + 2;
+    let sheet_properties = get_last_sheet_properties(&hub).await;
+    let new_sheet_index = sheet_properties.index.unwrap() + 2;
+    let new_sheet_id = sheet_properties.sheet_id.unwrap() + 1;
 
     let mut sheet_data = Vec::with_capacity(asset_data.len() + 2);
     sheet_data.push(vec![
@@ -70,19 +71,19 @@ pub async fn write_to_google_sheet(asset_data: &[AssetData]) {
 
     let composition_value_range = ValueRange {
         major_dimension: None,
-        range: Some(format!("{}!A1:E50", new_sheet_id)),
+        range: Some(format!("{}!A1:E50", new_sheet_index)),
         values: Some(sheet_data),
     };
 
     let snapshot_value_range = ValueRange {
         major_dimension: None,
-        range: Some(format!("{}!F1:G1", new_sheet_id)),
+        range: Some(format!("{}!F1:G1", new_sheet_index)),
         values: Some(vec![vec![
             serde_json::to_value("Snapshot Date").unwrap(),
             serde_json::to_value(format!("{}", Local::now().format("%d/%m/%Y"))).unwrap(),
         ]]),
     };
-    add_sheet_and_set_formatting(&hub, new_sheet_id, data_length).await;
+    add_sheet_and_set_formatting(&hub, new_sheet_id, new_sheet_index, data_length).await;
 
     let _ = hub
         .spreadsheets()
@@ -99,10 +100,10 @@ pub async fn write_to_google_sheet(asset_data: &[AssetData]) {
 }
 
 pub fn print_hashmap(asset_data: &[AssetData]) {
-    let mut map: HashMap<&Address, u16> = HashMap::new();
-    map.insert(&Address::ZERO, 0);
+    let mut map: HashMap<String, u16> = HashMap::new();
+    map.insert(Address::ZERO.to_checksum(None), 0);
     for i in asset_data {
-        map.insert(&i.oft_address, i.converted_weight.unwrap());
+        map.insert(i.oft_address.to_checksum(None), i.converted_weight.unwrap());
     }
     println!("{:?}", map)
 }
@@ -142,15 +143,16 @@ async fn batch_update_request(
 
 async fn add_sheet_and_set_formatting(
     hub: &Sheets<HttpsConnector<HttpConnector>>,
-    sheet_id: i32,
+    new_sheet_id: i32,
+    new_sheet_index: i32,
     data_length: usize,
 ) {
     // Create struct to add new sheet to spreadsheet
     let add_new_sheet = Request {
         add_sheet: Some(AddSheetRequest {
             properties: Some(SheetProperties {
-                title: Some(sheet_id.to_string()),
-                sheet_id: Some(sheet_id),
+                title: Some(new_sheet_index.to_string()),
+                sheet_id: Some(new_sheet_id),
                 ..SheetProperties::default()
             }),
         }),
@@ -161,7 +163,7 @@ async fn add_sheet_and_set_formatting(
     let bold_first_row = Request {
         repeat_cell: Some(RepeatCellRequest {
             range: Some(GridRange {
-                sheet_id: Some(sheet_id),
+                sheet_id: Some(new_sheet_id),
                 end_row_index: Some(1),
                 end_column_index: Some(6),
                 ..GridRange::default()
@@ -186,7 +188,7 @@ async fn add_sheet_and_set_formatting(
     let convert_column_percent = Request {
         repeat_cell: Some(RepeatCellRequest {
             range: Some(GridRange {
-                sheet_id: Some(sheet_id),
+                sheet_id: Some(new_sheet_id),
                 start_column_index: Some(1),
                 end_column_index: Some(2),
                 ..GridRange::default()
@@ -212,7 +214,7 @@ async fn add_sheet_and_set_formatting(
     let set_snapshot_type = Request {
         repeat_cell: Some(RepeatCellRequest {
             range: Some(GridRange {
-                sheet_id: Some(sheet_id),
+                sheet_id: Some(new_sheet_id),
                 start_column_index: Some(6),
                 end_column_index: Some(7),
                 start_row_index: Some(0),
@@ -239,7 +241,7 @@ async fn add_sheet_and_set_formatting(
     let italic_check_row = Request {
         repeat_cell: Some(RepeatCellRequest {
             range: Some(GridRange {
-                sheet_id: Some(sheet_id),
+                sheet_id: Some(new_sheet_id),
                 start_row_index: Some(data_length as i32),
                 end_row_index: Some(data_length as i32 + 1),
                 ..GridRange::default()
@@ -266,7 +268,7 @@ async fn add_sheet_and_set_formatting(
             range: Some(GridRange {
                 end_column_index: Some(4),
                 end_row_index: Some(data_length as i32),
-                sheet_id: Some(sheet_id),
+                sheet_id: Some(new_sheet_id),
                 ..GridRange::default()
             }),
             bottom: Some(Border {
