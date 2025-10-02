@@ -6,7 +6,8 @@ pub const VOTING_CONTRACT_ADDRESS: &str = "0xdD5CB392A549644295862f96f25484a56FB
 pub const INACTIVE_ASSETS: [Address; 1] = [address!("0x576e2bed8f7b46d34016198911cdf9886f78bea7")];
 pub const JOOCE_INT_WEIGHT: u16 = 1311;
 pub const SOLANA_CHAIN_ID: U256 = U256::from_limbs([1151111081099710_u64, 0, 0, 0]);
-pub const MIN_RELATIVE_WEIGHT: U256 = U256::from_limbs([5_000_000_000_000_000_u64, 0, 0, 0]);
+pub const MIN_RELATIVE_WEIGHT: f64 = 0.005;
+pub const SCALE: u128 = 10_000_000_000u128 * 1e18 as u128;
 
 pub static CHAIN_ID_TO_URL: LazyLock<HashMap<U256, String>> = LazyLock::new(|| {
     let mut map = HashMap::new();
@@ -88,6 +89,10 @@ pub static ADDR_TO_SOL_MINT_ADDR: LazyLock<HashMap<Address, Pubkey>> = LazyLock:
         address!("0x9BcbE99c5de789156Aa30eE47C0447BEac2a3B4c"),
         Pubkey::from_str("DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263").unwrap(),
     );
+    map.insert(
+        address!("0x735958915df64598461A5415Ad17EB9a3f98f5ac"),
+        Pubkey::from_str("Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk").unwrap(),
+    );
 
     map
 });
@@ -137,6 +142,10 @@ pub static TOKEN_TO_OFT: LazyLock<HashMap<Address, Address>> = LazyLock::new(|| 
     map.insert(
         address!("0x5026f006b85729a8b14553fae6af249ad16c9aab"),
         address!("0xAEa066b947D2201f60a62537d030aD3dC5cd324D"),
+    );
+    map.insert(
+        address!("0xA35923162C49cF95e6BF26623385eb431ad920D3"),
+        address!("0xe7AEA12D012138d4FA937962E3e27677e0088603"),
     );
 
     map

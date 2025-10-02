@@ -4,13 +4,16 @@ mod write_data;
 use std::{env, time};
 
 use crate::{
-    fetch_data::{decode_asset_ids, get_relative_weight, get_ticker}, variables::{
-        CHAIN_ID_TO_URL, INACTIVE_ASSETS, JOOCE_INT_WEIGHT, MIN_RELATIVE_WEIGHT,
+    IJooceVoting::IJooceVotingInstance,
+    fetch_data::{decode_asset_ids, get_ticker, get_weight},
+    variables::{
+        CHAIN_ID_TO_URL, INACTIVE_ASSETS, JOOCE_INT_WEIGHT, MIN_RELATIVE_WEIGHT, SCALE,
         VOTING_CONTRACT_ADDRESS,
-    }, write_data::{print_hashmap, write_to_google_sheet}, IJooceVoting::IJooceVotingInstance
+    },
+    write_data::{print_hashmap, write_to_google_sheet},
 };
 use alloy::{
-    primitives::{Address, U256, address},
+    primitives::{Address, U256, U512, address},
     providers::{DynProvider, Provider, ProviderBuilder},
     signers::local::PrivateKeySigner,
     sol,
@@ -26,7 +29,7 @@ pub struct AssetData {
     oft_address: Address,
     symbol: Option<String>,
     chain_id: U256,
-    relative_weight: Option<U256>,
+    relative_weight: Option<f64>,
     actual_weight: Option<f64>,
     converted_weight: Option<u16>,
 }
@@ -77,17 +80,22 @@ async fn main() -> Result<(), anyhow::Error> {
         converted_weight: Some(JOOCE_INT_WEIGHT),
         relative_weight: None,
     };
+    let total_weight = contract.weightsSum();
 
-    let (weights, symbols) = tokio::join!(
-        get_relative_weight(provider, &contract, &decoded_data),
-        get_ticker(&decoded_data)
+    let (weights, symbols, total_weight) = tokio::join!(
+        get_weight(provider, &contract, &decoded_data),
+        get_ticker(&decoded_data),
+        total_weight.call()
     );
+    let total_weight = total_weight.unwrap();
     for (i, asset) in decoded_data.iter_mut().enumerate() {
-        asset.relative_weight = Some(weights[i]);
+        asset.relative_weight = Some(u256_division(&weights[i], &total_weight));
         asset.symbol = Some(symbols[i].clone());
     }
+    println!("{:?}", decoded_data);
     calculate_actual_weights(&mut decoded_data);
     decoded_data.push(jooce);
+
     decoded_data.sort_unstable_by(|a, b| {
         b.converted_weight
             .unwrap()
@@ -105,6 +113,7 @@ async fn update_relative_weight(
     ids: &[U256],
 ) {
     for id in ids.iter() {
+        println!("{}", id);
         let tx = contract.checkpointAsset(*id).send().await;
         match tx {
             Ok(val) => {
@@ -126,11 +135,10 @@ fn calculate_actual_weights(asset_data: &mut Vec<AssetData>) {
 
     let weight_sum = asset_data
         .iter()
-        .fold(U256::from(0), |acc, x| acc + x.relative_weight.unwrap())
-        .to::<u64>() as f64;
+        .fold(0., |acc, x| acc + x.relative_weight.unwrap());
 
     asset_data.iter_mut().for_each(|asset| {
-        let relative_weight = asset.relative_weight.unwrap().to::<u64>() as f64;
+        let relative_weight = asset.relative_weight.unwrap();
         let actual_weight = (relative_weight / weight_sum) * 0.98;
         let converted_weight = (u16::MAX as f64 * actual_weight) as u16;
         asset.actual_weight.replace(actual_weight);
@@ -158,4 +166,24 @@ fn calculate_actual_weights(asset_data: &mut Vec<AssetData>) {
                 .converted_weight
                 .replace(asset.converted_weight.unwrap() + 1);
         });
+}
+
+fn u256_division(numerator: &U256, denominator: &U256) -> f64 {
+    let numerator = numerator.to::<U512>() * U512::from(SCALE);
+    println!("{}", numerator);
+    let quotient = numerator / denominator.to::<U512>();
+    println!("{}", quotient);
+    quotient.to::<u128>() as f64 / SCALE as f64
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    #[test]
+    fn check_conversion() {
+        let num_one = U256::from(1000);
+        let num_two = U256::from(1000);
+        let result = u256_division(&num_one, &num_two);
+    }
 }

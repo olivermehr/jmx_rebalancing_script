@@ -12,19 +12,19 @@ use solana_client::rpc_client;
 use solana_sdk::pubkey::Pubkey;
 use std::collections::HashMap;
 
-pub async fn get_relative_weight(
+pub async fn get_weight(
     provider: DynProvider<Optimism>,
     contract: &IJooceVotingInstance<DynProvider<Optimism>, Optimism>,
     asset_data: &[AssetData],
 ) -> Vec<U256> {
     let mut multicall: MulticallBuilder<
-        Dynamic<IJooceVoting::relativeWeightCall>,
+        Dynamic<IJooceVoting::weightCall>,
         &DynProvider<Optimism>,
         Optimism,
     > = provider.multicall().dynamic();
 
     for asset in asset_data.iter() {
-        multicall = multicall.add_dynamic(contract.relativeWeight(asset.id));
+        multicall = multicall.add_dynamic(contract.weight(asset.id));
     }
     let result = multicall.aggregate().await.unwrap();
 
