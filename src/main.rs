@@ -1,7 +1,7 @@
 mod fetch_data;
 mod variables;
 mod write_data;
-use std::{env, time};
+use std::env;
 
 use crate::{
     IJooceVoting::IJooceVotingInstance,
@@ -20,6 +20,7 @@ use alloy::{
 };
 use dotenv::dotenv;
 
+use futures::StreamExt;
 use op_alloy_network::Optimism;
 
 #[derive(Debug, Clone)]
@@ -50,13 +51,12 @@ sol!(
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let time = time::Instant::now();
     let args: Vec<String> = env::args().collect();
     dotenv().ok();
     let pk: PrivateKeySigner = std::env::var("PRIVATE_KEY")
         .expect("Private key missing")
         .parse()?;
-    let key = op_alloy_network::EthereumWallet::new(pk);
+    let key = op_alloy_network::EthereumWallet::new(pk.clone());
     let provider = ProviderBuilder::new_with_network::<Optimism>()
         .wallet(key)
         .connect_http(CHAIN_ID_TO_URL.get(&U256::from(8453)).unwrap().parse()?)
@@ -67,7 +67,16 @@ async fn main() -> Result<(), anyhow::Error> {
     if let Some(val) = args.get(1)
         && val.to_lowercase() == "update"
     {
-        update_relative_weight(&contract, &asset_ids).await;
+        update_relative_weight(
+            &contract,
+            &asset_ids,
+            provider
+                .get_transaction_count(pk.address())
+                .latest()
+                .await
+                .unwrap(),
+        )
+        .await;
     }
     let mut decoded_data = decode_asset_ids(&asset_ids);
     let jooce = AssetData {
@@ -92,7 +101,6 @@ async fn main() -> Result<(), anyhow::Error> {
         asset.relative_weight = Some(u256_division(&weights[i], &total_weight));
         asset.symbol = Some(symbols[i].clone());
     }
-    println!("{:?}", decoded_data);
     calculate_actual_weights(&mut decoded_data);
     decoded_data.push(jooce);
 
@@ -104,22 +112,30 @@ async fn main() -> Result<(), anyhow::Error> {
 
     write_to_google_sheet(&decoded_data).await;
     print_hashmap(&decoded_data);
-    println!("{:?}", time.elapsed());
     Ok(())
 }
 
 async fn update_relative_weight(
     contract: &IJooceVotingInstance<DynProvider<Optimism>, Optimism>,
     ids: &[U256],
+    mut tx_count: u64,
 ) {
-    for id in ids.iter() {
-        println!("{}", id);
-        let tx = contract.checkpointAsset(*id).send().await;
-        match tx {
-            Ok(val) => {
-                let receipt = val.get_receipt().await;
-                println!("{:?}", receipt.unwrap())
-            }
+    let futures = futures::stream::iter(ids)
+        .map(|id| {
+            let async_block =
+                async move { contract.checkpointAsset(*id).nonce(tx_count).send().await };
+            tx_count += 1;
+            async_block
+        })
+        .buffered(30)
+        .collect::<Vec<_>>();
+
+    for pending_tx in futures.await.into_iter() {
+        match pending_tx {
+            Ok(tx) => match tx.get_receipt().await {
+                Ok(val) => println!("Tx Successful: {:?}", val),
+                Err(error) => println!("Tx failed: {}", error),
+            },
             Err(val) => {
                 println!("Error with tx - {}", val);
             }
@@ -170,9 +186,7 @@ fn calculate_actual_weights(asset_data: &mut Vec<AssetData>) {
 
 fn u256_division(numerator: &U256, denominator: &U256) -> f64 {
     let numerator = numerator.to::<U512>() * U512::from(SCALE);
-    println!("{}", numerator);
     let quotient = numerator / denominator.to::<U512>();
-    println!("{}", quotient);
     quotient.to::<u128>() as f64 / SCALE as f64
 }
 
@@ -184,6 +198,6 @@ mod tests {
     fn check_conversion() {
         let num_one = U256::from(1000);
         let num_two = U256::from(1000);
-        let result = u256_division(&num_one, &num_two);
+        let _ = u256_division(&num_one, &num_two);
     }
 }
