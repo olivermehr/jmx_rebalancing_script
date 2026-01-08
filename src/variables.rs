@@ -3,7 +3,22 @@ use solana_sdk::pubkey::Pubkey;
 use std::{collections::hash_map::HashMap, env, str::FromStr, sync::LazyLock};
 
 pub const VOTING_CONTRACT_ADDRESS: &str = "0xdD5CB392A549644295862f96f25484a56FB2e6a8";
-pub const INACTIVE_ASSETS: [Address; 1] = [address!("0x576e2bed8f7b46d34016198911cdf9886f78bea7")];
+pub const INACTIVE_ASSETS: [Address; 7] = [
+    // TRUMP
+    address!("0x576e2bed8f7b46d34016198911cdf9886f78bea7"),
+    // COQ
+    address!("0x420FcA0121DC28039145009570975747295f2329"),
+    // GIGA OFT
+    address!("0x2107895Cd820573Cdc943dF2A26910945555C29d"),
+    // SKI
+    address!("0x768BE13e1680b5ebE0024C42c896E3dB59ec0149"),
+    // BENJI
+    address!("0xBC45647eA894030a4E9801Ec03479739FA2485F0"),
+    // KEYCAT
+    address!("0x9a26F5433671751C3276a065f57e5a02D2817973"),
+    // ai16z OFT
+    address!("0x4520A52CfB5daD1a6aeAd5f43C96eD2A9760E77e"),
+];
 pub const JOOCE_INT_WEIGHT: u16 = 1311;
 pub const SOLANA_CHAIN_ID: U256 = U256::from_limbs([1151111081099710_u64, 0, 0, 0]);
 pub const MIN_RELATIVE_WEIGHT: f64 = 0.005;

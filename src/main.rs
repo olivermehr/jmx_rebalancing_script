@@ -120,18 +120,19 @@ async fn update_relative_weight(
     ids: &[U256],
     mut tx_count: u64,
 ) {
-    let futures = futures::stream::iter(ids)
+    let send_futures = futures::stream::iter(ids)
         .map(|id| {
             let async_block =
                 async move { contract.checkpointAsset(*id).nonce(tx_count).send().await };
             tx_count += 1;
             async_block
         })
-        .buffered(30)
-        .collect::<Vec<_>>();
+        .buffer_unordered(100)
+        .collect::<Vec<_>>()
+        .await;
 
-    for pending_tx in futures.await.into_iter() {
-        match pending_tx {
+    for result in send_futures {
+        match result {
             Ok(tx) => match tx.get_receipt().await {
                 Ok(val) => println!("Tx Successful: {:?}", val),
                 Err(error) => println!("Tx failed: {}", error),
