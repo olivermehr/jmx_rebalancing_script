@@ -3,7 +3,9 @@ use solana_sdk::pubkey::Pubkey;
 use std::{collections::hash_map::HashMap, env, str::FromStr, sync::LazyLock};
 
 pub const VOTING_CONTRACT_ADDRESS: &str = "0xdD5CB392A549644295862f96f25484a56FB2e6a8";
-pub const INACTIVE_ASSETS: [Address; 7] = [
+
+// Inactive assets should be their original address if EVM based or their OFT address if not
+pub const INACTIVE_ASSETS: [Address; 13] = [
     // TRUMP
     address!("0x576e2bed8f7b46d34016198911cdf9886f78bea7"),
     // COQ
@@ -18,6 +20,18 @@ pub const INACTIVE_ASSETS: [Address; 7] = [
     address!("0x9a26F5433671751C3276a065f57e5a02D2817973"),
     // ai16z OFT
     address!("0x4520A52CfB5daD1a6aeAd5f43C96eD2A9760E77e"),
+    // doginme
+    address!("0x6921B130D297cc43754afba22e5EAc0FBf8Db75b"),
+    // MEMECOIN
+    address!("0xb131f4A55907B10d1F0A50d8ab8FA09EC342cd74"),
+    // FWOG
+    address!("0xffeba30f39faa3601911090d5ce7388d719109c9"),
+    // CAT
+    address!("0x6894cde390a3f51155ea41ed24a33a4827d3063d"),
+    // ELON
+    address!("0x761d38e5ddf6ccf6cf7c55759d5210750b5d60f3"),
+    // WOJAK
+    address!("0x5026f006b85729a8b14553fae6af249ad16c9aab"),
 ];
 pub const JOOCE_INT_WEIGHT: u16 = 1311;
 pub const SOLANA_CHAIN_ID: U256 = U256::from_limbs([1151111081099710_u64, 0, 0, 0]);
